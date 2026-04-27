@@ -957,9 +957,18 @@ fn pack_file_to_process_data(
 /// Any validity error is discarded and turned into a panic, as modification of hardcoded data is not
 /// to be handled as an error.
 ///
+/// Patterns rooted at the `assets/` or `data/` namespaces are automatically extended to also match
+/// the same path nested inside any overlay directory declared in `pack.mcmeta`, so that files
+/// targeting a specific Minecraft version under an overlay are classified by the same rules as the
+/// base pack.
+///
 /// Please note that, even though this function requires a static string slice in an effort to prevent
 /// accidental misuse, it is possible to get string slices that live indefinitely by leaking a heap
 /// allocation.
 fn compile_hardcoded_pack_file_glob_pattern(glob_pattern: &'static str) -> Glob {
+	if glob_pattern.starts_with("assets/") || glob_pattern.starts_with("data/") {
+		let with_overlay_prefix = format!("**/{glob_pattern}");
+		return compile_pack_file_glob_pattern(&with_overlay_prefix).unwrap();
+	}
 	compile_pack_file_glob_pattern(glob_pattern).unwrap()
 }
